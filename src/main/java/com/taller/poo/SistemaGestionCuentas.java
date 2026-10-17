@@ -19,11 +19,11 @@ public class SistemaGestionCuentas {
 
         int opcion;
         do {
-            System.out.printf("%n===== SISTEMA DE GESTIÓN DE CUENTAS =====%n");
-            System.out.printf("1. Depositar%n");
-            System.out.printf("2. Retirar%n");
-            System.out.printf("3. Ver reporte consolidado%n");
-            System.out.printf("4. Salir%n");
+            System.out.printf("SISTEMA DE GESTIÓN DE CUENTAS ");
+            System.out.printf("1. Depositar");
+            System.out.printf("2. Retirar");
+            System.out.printf("3. Ver reporte consolidado");
+            System.out.printf("4. Salir");
             System.out.printf("Seleccione una opción: ");
 
             if (!scanner.hasNextInt()) {

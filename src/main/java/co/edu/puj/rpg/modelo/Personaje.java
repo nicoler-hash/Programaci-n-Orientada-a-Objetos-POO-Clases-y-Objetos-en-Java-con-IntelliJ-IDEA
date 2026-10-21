@@ -1,153 +1,111 @@
 package co.edu.puj.rpg.modelo;
 
-import co.edu.puj.rpg.modelo.enemigo.Enemigo;
+/**
+ * Clase abstracta base. Concentra el estado común (protected, visible para las
+ * subclases aunque estén en otro paquete) y la lógica compartida. Obliga a las
+ * subclases a definir su ataque especial. No puede instanciarse directamente.
+ */
+public abstract class Personaje implements ICombatiente {
 
-public class Personaje {
+    protected String nombre;
+    protected int vida;
+    protected int vidaMaxima;
+    protected int ataqueBase;
+    protected int posicionX; // columna en el tablero
+    protected int posicionY; // fila en el tablero
 
-    // ----- Atributos privados: inaccesibles desde Main o cualquier otra clase -----
-    private String nombre;
-    private int puntosVida;
-    private int vidaMaxima;
-    private int puntosAtaque;
-    private int nivel = 1;          // Nivel inicial por defecto
-    private double oro;
-    private boolean estaVivo;
-
-    // Datos del último ataque (también privados) para poder registrarlos en el log
-    private int ultimoDano;
-    private boolean ultimoGolpeCritico;
-
-    /**
-     * Constructor completo. Usa 'this' para diferenciar parámetros de atributos
-     * y valida los datos para que el objeto nazca siempre en un estado coherente.
-     */
-    public Personaje(String nombre, int vidaMaxima, int puntosAtaque, double oro) {
-        this.nombre = (nombre == null || nombre.isBlank()) ? "Héroe" : nombre;
-        this.vidaMaxima = Math.max(vidaMaxima, 1);        // Vida máxima mínima: 1
-        this.puntosAtaque = Math.max(puntosAtaque, 0);    // Ataque no negativo
-        this.oro = Math.max(oro, 0.0);                    // Oro inicial no negativo
-        this.nivel = 1;
-        // Se inicializa la vida a través del setter (puntosVida = vidaMaxima, estaVivo = true)
-        this.setPuntosVida(this.vidaMaxima);
+    public Personaje(String nombre, int vida, int ataqueBase, int posicionX, int posicionY) {
+        this.nombre = (nombre == null || nombre.isBlank()) ? "Sin nombre" : nombre;
+        this.vida = Math.max(vida, 1);
+        this.vidaMaxima = this.vida;
+        this.ataqueBase = Math.max(ataqueBase, 0);
+        this.posicionX = posicionX;
+        this.posicionY = posicionY;
     }
 
-    // ===================== SETTERS CON VALIDACIÓN =====================
+    // ----- Método abstracto: cada subclase define su ataque único -----
+    public abstract void realizarAtaqueEspecial(Personaje objetivo);
 
-    /**
-     * Regla de negocio:
-     *  - vida <= 0          -> puntosVida = 0 y estaVivo = false
-     *  - vida > vidaMaxima  -> puntosVida = vidaMaxima
-     *  - valor intermedio   -> se asigna y estaVivo = true
-     */
-    public void setPuntosVida(int vida) {
-        if (vida <= 0) {
-            this.puntosVida = 0;
-            this.estaVivo = false;
-        } else if (vida > this.vidaMaxima) {
-            this.puntosVida = this.vidaMaxima;
-            this.estaVivo = true;
-        } else {
-            this.puntosVida = vida;
-            this.estaVivo = true;
+    // ----- Implementación base del contrato ICombatiente -----
+    @Override
+    public void defender(int danoRecibido) {
+        recibirDano(danoRecibido);
+        System.out.printf("   -> %s recibe %d de daño (vida: %d/%d)%n",
+                nombre, danoRecibido, vida, vidaMaxima);
+        if (!estaVivo()) {
+            System.out.printf("   -> %s ha caído en combate.%n", nombre);
         }
     }
 
-    /**
-     * Regla de negocio: el oro nunca puede ser negativo.
-     * Si la operación dejaría el saldo en negativo, se rechaza sin alterar el atributo.
-     */
-    public void setOro(double oro) {
-        if (oro < 0.0) {
-            System.out.println("Saldo insuficiente: la operación fue rechazada.");
-            return; // El atributo NO se modifica
-        }
-        this.oro = oro;
+    // ----- Métodos concretos compartidos -----
+    public boolean estaVivo() {
+        return vida > 0;
     }
 
-    /**
-     * Regla de negocio: el nivel mínimo es 1.
-     * Si el valor es inválido se conserva el nivel actual.
-     */
-    public void setNivel(int nivel) {
-        if (nivel < 1) {
-            return; // Se mantiene el valor actual
+    /** Descuenta salud garantizando que no descienda de cero. */
+    public void recibirDano(int cantidad) {
+        if (cantidad <= 0) {
+            return;
         }
-        this.nivel = nivel;
+        this.vida = Math.max(this.vida - cantidad, 0);
     }
 
-    // ===================== GETTERS (API pública de lectura) =====================
+    /** Recupera salud sin superar vidaMaxima. */
+    public void curar(int cantidad) {
+        if (cantidad <= 0 || !estaVivo()) {
+            return;
+        }
+        this.vida = Math.min(this.vida + cantidad, this.vidaMaxima);
+    }
 
+    /** Gancho que se ejecuta al iniciar el turno (las subclases pueden sobreescribirlo). */
+    public void iniciarTurno() {
+        // Por defecto no hace nada
+    }
+
+    /** Alcance de ataque en celdas (distancia de Chebyshev). */
+    public int getAlcance() {
+        return 1;
+    }
+
+    /** Carácter con el que se dibuja al personaje en el tablero. */
+    public char getSimbolo() {
+        return '?';
+    }
+
+    /** Línea de estado para la consola. */
+    public String getResumen() {
+        return String.format("%s [%c] Vida: %d/%d | Pos: (%d,%d)",
+                nombre, getSimbolo(), vida, vidaMaxima, posicionX, posicionY);
+    }
+
+    // ----- Getters / setter de posición -----
     public String getNombre() {
         return nombre;
     }
 
-    public int getPuntosVida() {
-        return puntosVida;
+    public int getVida() {
+        return vida;
     }
 
     public int getVidaMaxima() {
         return vidaMaxima;
     }
 
-    public int getPuntosAtaque() {
-        return puntosAtaque;
+    public int getAtaqueBase() {
+        return ataqueBase;
     }
 
-    public int getNivel() {
-        return nivel;
+    public int getPosicionX() {
+        return posicionX;
     }
 
-    public double getOro() {
-        return oro;
+    public int getPosicionY() {
+        return posicionY;
     }
 
-    public boolean isEstaVivo() {
-        return estaVivo;
+    public void setPosicion(int x, int y) {
+        this.posicionX = x;
+        this.posicionY = y;
     }
-
-    public int getUltimoDano() {
-        return ultimoDano;
-    }
-
-    public boolean isUltimoGolpeCritico() {
-        return ultimoGolpeCritico;
-    }
-
-    // ===================== MÉTODOS DE COMPORTAMIENTO =====================
-
-    /**
-     * Ataca al enemigo. Con 15% de probabilidad el golpe es crítico (daño x2).
-     * El daño se aplica a través de enemigo.recibirDano(), nunca tocando
-     * directamente los atributos privados del enemigo.
-     */
-    public void atacar(Enemigo enemigo) {
-        int dano = this.puntosAtaque;
-        this.ultimoGolpeCritico = Math.random() < 0.15;
-        if (this.ultimoGolpeCritico) {
-            dano *= 2;
-        }
-        this.ultimoDano = dano;
-        enemigo.recibirDano(dano);
-    }
-
-    /**
-     * Restaura vida. El tope de vidaMaxima y el estado estaVivo
-     * los controla setPuntosVida().
-     */
-    public void usarPocion(int cantidadRestaurada) {
-        if (cantidadRestaurada <= 0) {
-            return; // Una poción no puede quitar vida
-        }
-        this.setPuntosVida(this.puntosVida + cantidadRestaurada);
-    }
-
-    /**
-     * Reduce vida delegando la validación (piso en 0 y estaVivo = false) al setter.
-     */
-    public void recibirDano(int cantidadDano) {
-        if (cantidadDano < 0) {
-            return; // Un daño negativo no puede curar
-        }
-        this.setPuntosVida(this.puntosVida - cantidadDano);
-    }
-    }
+}

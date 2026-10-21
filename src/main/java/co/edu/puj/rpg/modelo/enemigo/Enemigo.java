@@ -2,84 +2,24 @@ package co.edu.puj.rpg.modelo.enemigo;
 
 import co.edu.puj.rpg.modelo.Personaje;
 
-public class Enemigo {
+/**
+ * Enemigo controlado por la IA. Es un Personaje más, por lo que puede
+ * guardarse y tratarse polimórficamente.
+ */
+public class Enemigo extends Personaje {
 
-    // ----- Atributos privados -----
-    private String nombre;
-    private int puntosVida;
-    private int vidaMaxima;
-    private int puntosAtaque;
-    private boolean estaVivo;
-
-    /**
-     * Constructor con 'this' y validación de datos de entrada.
-     */
-    public Enemigo(String nombre, int vidaMaxima, int puntosAtaque) {
-        this.nombre = (nombre == null || nombre.isBlank()) ? "Enemigo" : nombre;
-        this.vidaMaxima = Math.max(vidaMaxima, 1);
-        this.puntosAtaque = Math.max(puntosAtaque, 0);
-        this.setPuntosVida(this.vidaMaxima); // puntosVida = vidaMaxima y estaVivo = true
+    public Enemigo(String nombre, int vida, int ataqueBase, int posX, int posY) {
+        super(nombre, vida, ataqueBase, posX, posY);
     }
 
-    // ===================== SETTER VALIDADO =====================
-
-    /**
-     * Regla de negocio:
-     *  - vida <= 0          -> puntosVida = 0 y estaVivo = false
-     *  - vida > vidaMaxima  -> puntosVida = vidaMaxima
-     *  - valor intermedio   -> se asigna y estaVivo = true
-     */
-    public void setPuntosVida(int vida) {
-        if (vida <= 0) {
-            this.puntosVida = 0;
-            this.estaVivo = false;
-        } else if (vida > this.vidaMaxima) {
-            this.puntosVida = this.vidaMaxima;
-            this.estaVivo = true;
-        } else {
-            this.puntosVida = vida;
-            this.estaVivo = true;
-        }
+    @Override
+    public void realizarAtaqueEspecial(Personaje objetivo) {
+        System.out.printf("%s embiste a %s (%d de daño)%n", nombre, objetivo.getNombre(), ataqueBase);
+        objetivo.defender(ataqueBase);
     }
 
-    // ===================== GETTERS PÚBLICOS =====================
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public int getPuntosVida() {
-        return puntosVida;
-    }
-
-    public int getVidaMaxima() {
-        return vidaMaxima;
-    }
-
-    public int getPuntosAtaque() {
-        return puntosAtaque;
-    }
-
-    public boolean isEstaVivo() {
-        return estaVivo;
-    }
-
-    // ===================== COMPORTAMIENTO =====================
-
-    /**
-     * Reduce la vida delegando las reglas al setter validado.
-     */
-    public void recibirDano(int dano) {
-        if (dano < 0) {
-            return; // Un daño negativo no puede curar
-        }
-        this.setPuntosVida(this.puntosVida - dano);
-    }
-
-    /**
-     * Ataca al personaje usando únicamente su API pública (recibirDano).
-     */
-    public void atacar(Personaje personaje) {
-        personaje.recibirDano(this.puntosAtaque);
+    @Override
+    public char getSimbolo() {
+        return 'E';
     }
 }

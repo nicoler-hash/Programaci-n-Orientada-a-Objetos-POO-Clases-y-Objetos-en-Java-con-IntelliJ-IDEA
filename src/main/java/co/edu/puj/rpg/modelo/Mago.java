@@ -11,6 +11,7 @@ public class Mago extends Personaje {
     public Mago(String nombre, int vida, int ataqueBase, int posX, int posY, int puntosMana) {
         super(nombre, vida, ataqueBase, posX, posY);
         this.puntosMana = Math.max(puntosMana, 0);
+        configurarManaBase(this.puntosMana); // el CorazonRPG registra el maná base
     }
 
     @Override
